@@ -1,4 +1,5 @@
 import numpy as np
+from utility import z_score_norm, load_dataset, plot_accuracy_trace
 
 
 # Main algorith
@@ -48,6 +49,8 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
     # best current round
     current_best_accuracy = 0
     current_best_feature = None
+    # logging
+    trace_log = []
     # Threshold
     local_minimum = local_minimum_threshold
     print(f'This dataset has {len(features)} records, and {len(features[0])} features')
@@ -81,6 +84,7 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
         
         # Start with the current best next round
         selected_features = current_best_feature
+        trace_log.append((selected_features.copy(), current_best_accuracy))
 
         # End condition
         if current_best_feature!=best_feature and local_minimum == 0:
@@ -88,7 +92,7 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
             break
         elif current_best_feature!=best_feature:
             # local minimum
-            print(f'The accuracy is decreaseing!! Current round best feature(s) are {current_best_feature}, with accuracy {current_best_accuracy:.2f}, lower than overall best {best_feature}, with accuracy {best_accuracy:.2f}.')
+            print(f'The accuracy is decreasing!! Current round best feature(s) are {current_best_feature}, with accuracy {current_best_accuracy:.2f}, lower than overall best {best_feature}, with accuracy {best_accuracy:.2f}.')
             # Reduce the counter
             local_minimum -= 1
         else:
@@ -98,10 +102,10 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
             local_minimum = local_minimum_threshold
 
     print(f'Best feature subset is {best_feature} with accuracy {best_accuracy:.2f}')
-    return best_feature
+    return best_feature, trace_log
 
 
-def backward_elimination(features, labels, local_minimum_threshold=1):
+def backward_elimination(features, labels, local_minimum_threshold=5):
     num_features = len(features[0])
     # Start from full
     selected_features = list(range(num_features))
@@ -110,6 +114,7 @@ def backward_elimination(features, labels, local_minimum_threshold=1):
     best_feature = selected_features.copy()
     # Threshold
     local_minimum = local_minimum_threshold
+    trace_log = [(selected_features.copy(), best_accuracy)]
     # Print begin condition
     print(f'This dataset has {len(features)} records, and {len(features[0])} features')
     print(f"Initial accuracy with all features: {best_accuracy:.2f}")
@@ -120,10 +125,12 @@ def backward_elimination(features, labels, local_minimum_threshold=1):
         feature_to_remove = None
         # Pick out the feature that gives us the highest accuracy
         for feature in selected_features:
+
             current_features = selected_features.copy()
             current_features.remove(feature)
             accuracy = nearest_neighbor_classification(features, labels, current_features)
             print(f'Current feature(s) {current_features}, with accuracy {accuracy}')
+
             if accuracy > current_best_accuracy:
                 current_best_accuracy = accuracy
                 feature_to_remove = feature
@@ -133,45 +140,20 @@ def backward_elimination(features, labels, local_minimum_threshold=1):
                     best_feature = current_features
         
         selected_features.remove(feature_to_remove)
+        trace_log.append((selected_features.copy(), current_best_accuracy))
         # check
         if current_best_accuracy != best_accuracy and local_minimum==0:
+           # early end
            break
         elif current_best_accuracy != best_accuracy:
-            print(f'The accuracy is decreaseing!! Current round best feature(s) are {selected_features}, with accuracy {current_best_accuracy:.2f}, lower than overall best {best_feature}, with accuracy {best_accuracy:.2f}.')
+            print(f'The accuracy is decreasing!! Current round best feature(s) are {selected_features}, with accuracy {current_best_accuracy:.2f}, lower than overall best {best_feature}, with accuracy {best_accuracy:.2f}.')
             local_minimum -= 1
         else: 
             print(f'Current best overall is {best_feature} with accuracy {best_accuracy:.2f}')
             local_minimum = local_minimum_threshold
     print(f'Best feature subset is {best_feature} with accuracy {best_accuracy:.2f}')
-    return best_feature
+    return best_feature, trace_log
     
-
-def leave_one_out_cross_validation(features, labels, model):
-
-    n_samples = features.shape[0]
-    correct_predictions = 0
-
-    for i in range(n_samples):
-        # Split the data into training and test sets
-        X_train = np.delete(features, i, axis=0)
-        y_train = np.delete(labels, i, axis=0)
-        X_test = features[i].reshape(1, -1)
-        y_test = labels[i]
-
-        # Train the model
-        model.fit(X_train, y_train)
-
-        # Predict the label for the test set
-        y_pred = model.predict(X_test)
-
-        # Check if the prediction is correct
-        if y_pred[0] == y_test:
-            correct_predictions += 1
-
-    # Calculate the overall accuracy
-    accuracy = correct_predictions / n_samples
-    return accuracy
-
 
 
 
@@ -180,8 +162,8 @@ if __name__ == "__main__":
 
     # load dataset
     labels = np.array([1, 1, 2])
-    features = np.array([[1,1],[1,2],[10,10]])
-    selected_features = [0,1]
+    features = np.array([[1,1, 5],[1,2, 5],[10,10,5]])
+    selected_features = [0,1, 2]
 
     acc = nearest_neighbor_classification(features, labels, selected_features)
     print('Accuracy: ', acc)
@@ -189,8 +171,11 @@ if __name__ == "__main__":
     # Accuracy is 0.666
     from utility import load_dataset, z_score_norm
 
+    #features, labels = load_dataset('CS205_small_Data__27.txt')
     features, labels = load_dataset('CS205_large_Data__6.txt')
     features = z_score_norm(features)
   
-    forward_selection(features, labels)
-    #backward_elimination(features, labels)
+    #forward_selection(features, labels)
+    best_subset, trace_log = backward_elimination(features, labels)
+
+    plot_accuracy_trace(trace_log, title='Forward Selection on Small Dataset')
