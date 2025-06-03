@@ -27,23 +27,51 @@ def z_score_norm(features):
     return result
 
 
-def plot_accuracy_trace(trace_log, title='Feature Selection Trace', save_path=None, direction ='forward'):
-    steps = list(range(1, len(trace_log)+1))
-    accuracies = [acc for _, acc in trace_log]
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
-    plt.figure()
-    plt.plot(steps, accuracies, marker='o')
-    plt.title(title)
-    if direction == 'forward':
-        plt.xlabel('Number of Features Selected')
+def plot_accuracy_trace(trace_log, title='Feature Selection Trace', save_path=None, direction='forward'):
+
+ 
+    accuracies = [acc for _, acc in trace_log]
+    # Why doesn't it reverse the x-axis?
+    if direction != 'forward':
+        x_values = list(reversed(range(len(trace_log), 0, -1)))
     else:
-        plt.xlabel('Number of Features Removed')
+        x_values = list(range(1, len(trace_log)+1))
+
+    # Determine changed feature per step
+    feature_changes = []
+    for i in range(len(trace_log)):
+        current_set = set(trace_log[i][0])
+        if i == 0:
+            changed = list(current_set)[0]
+        else:
+            prev_set = set(trace_log[i-1][0])
+            diff = current_set.symmetric_difference(prev_set)
+            changed = list(diff)[0] if diff else -1
+        feature_changes.append(changed)
+
+    # Plot
+    plt.figure(figsize=(8, 5))
+    plt.plot(x_values, accuracies, marker='o')
+    for x, y, fidx in zip(x_values, accuracies, feature_changes):
+        plt.text(x, y + 0.002, str(fidx), ha='center', fontsize=14, fontweight='bold')
+
+    plt.title(title)
+    xlabel = 'Number of Features Selected' if direction == 'forward' else 'Number of Features Removed'
+    plt.xlabel(xlabel)
+
     plt.ylabel('Accuracy')
     plt.grid(True)
+
     ax = plt.gca()
     ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
     if save_path:
         plt.savefig(save_path)
+
+    plt.tight_layout()
     plt.show()
 
 

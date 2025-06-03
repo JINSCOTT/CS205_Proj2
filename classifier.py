@@ -53,7 +53,8 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
     trace_log = []
     # Threshold
     local_minimum = local_minimum_threshold
-    print(f'This dataset has {len(features)} records, and {len(features[0])} features')
+    print(f'This dataset has {len(features[0])} features(not including the class attribute), with {len(features)} instances')
+    print("Begin search:")
     # this controls the number of feature selected, starting from 1 
     for _ in range(num_features):
 
@@ -70,7 +71,7 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
             current_features = selected_features + [feature]
           
             accuracy = nearest_neighbor_classification(features, labels, current_features)
-            print(f'Current feature(s) {current_features}, with accuracy {accuracy:.2f}')
+            print(f'Using feature(s) {current_features}, accuracy is {accuracy:.2f}')
 
 
 
@@ -92,20 +93,20 @@ def forward_selection(features, labels, local_minimum_threshold = 1):
             break
         elif current_best_feature!=best_feature:
             # local minimum
-            print(f'The accuracy is decreasing!! Current round best feature(s) are {current_best_feature}, with accuracy {current_best_accuracy:.2f}, lower than overall best {best_feature}, with accuracy {best_accuracy:.2f}.')
+            print(f'The accuracy is decreasing!! Feature set is {current_best_feature}, Accuracy is {current_best_accuracy:.2f}. feature set {best_feature}, was the best. Accuracy is {best_accuracy:.2f}.')
             # Reduce the counter
             local_minimum -= 1
         else:
             # Continue
-            print(f'Current best overall is {best_feature} with accuracy {best_accuracy:.2f}')
+            print(f'Feature set {best_feature} was the best. Accuracy is {best_accuracy:.2f}')
             # refresh threashoold
             local_minimum = local_minimum_threshold
 
-    print(f'Best feature subset is {best_feature} with accuracy {best_accuracy:.2f}')
+    print(f'Finished search!! The best feature subset is  {best_feature} which has an accuracy of {best_accuracy:.2f}')
     return best_feature, trace_log
 
 
-def backward_elimination(features, labels, local_minimum_threshold=5):
+def backward_elimination(features, labels, local_minimum_threshold=1):
     num_features = len(features[0])
     # Start from full
     selected_features = list(range(num_features))
@@ -117,8 +118,8 @@ def backward_elimination(features, labels, local_minimum_threshold=5):
     trace_log = [(selected_features.copy(), best_accuracy)]
     # Print begin condition
     print(f'This dataset has {len(features)} records, and {len(features[0])} features')
-    print(f"Initial accuracy with all features: {best_accuracy:.2f}")
-
+    print(f'Using feature(s) {best_feature}, accuracy is {best_accuracy:.2f}')
+    print("Begin search:")
     while len(selected_features) > 1:
 
         current_best_accuracy = 0
@@ -129,7 +130,7 @@ def backward_elimination(features, labels, local_minimum_threshold=5):
             current_features = selected_features.copy()
             current_features.remove(feature)
             accuracy = nearest_neighbor_classification(features, labels, current_features)
-            print(f'Current feature(s) {current_features}, with accuracy {accuracy}')
+            print(f'Using feature(s) {current_features}, accuracy is {accuracy:.2f}')
 
             if accuracy > current_best_accuracy:
                 current_best_accuracy = accuracy
@@ -146,12 +147,13 @@ def backward_elimination(features, labels, local_minimum_threshold=5):
            # early end
            break
         elif current_best_accuracy != best_accuracy:
-            print(f'The accuracy is decreasing!! Current round best feature(s) are {selected_features}, with accuracy {current_best_accuracy:.2f}, lower than overall best {best_feature}, with accuracy {best_accuracy:.2f}.')
+            print(f'The accuracy is decreasing!! Feature set is {selected_features}, Accuracy is {current_best_accuracy:.2f}. feature set {best_feature}, was the best. Accuracy is {best_accuracy:.2f}.')
             local_minimum -= 1
         else: 
-            print(f'Current best overall is {best_feature} with accuracy {best_accuracy:.2f}')
+            print(f'Feature set {best_feature} was the best. Accuracy is {best_accuracy:.2f}')
             local_minimum = local_minimum_threshold
-    print(f'Best feature subset is {best_feature} with accuracy {best_accuracy:.2f}')
+    
+    print(f'Finished search!! The best feature subset is  {best_feature} which has an accuracy of {best_accuracy:.2f}')
     return best_feature, trace_log
     
 
